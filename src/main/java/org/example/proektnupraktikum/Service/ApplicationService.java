@@ -6,9 +6,9 @@ import org.example.proektnupraktikum.Entity.Application;
 import org.example.proektnupraktikum.Entity.Enum.ApplicationStatus;
 import org.example.proektnupraktikum.Entity.StudentProfile;
 import org.example.proektnupraktikum.Entity.Vacancy;
-import org.example.proektnupraktikum.repository.ApplicationRepository;
-import org.example.proektnupraktikum.repository.StudentProfileRepository;
-import org.example.proektnupraktikum.repository.VacancyRepository;
+import org.example.proektnupraktikum.Repository.ApplicationRepository;
+import org.example.proektnupraktikum.Repository.StudentProfileRepository;
+import org.example.proektnupraktikum.Repository.VacancyRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

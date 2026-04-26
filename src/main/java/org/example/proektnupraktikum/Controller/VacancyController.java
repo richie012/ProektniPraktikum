@@ -1,6 +1,7 @@
 package org.example.proektnupraktikum.Controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.proektnupraktikum.Dto.Vacancy.Response.VacancyResponse;
 import org.example.proektnupraktikum.Entity.Vacancy;
 import org.example.proektnupraktikum.Service.VacancyService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +19,7 @@ public class VacancyController {
     private final VacancyService vacancyService;
 
     @GetMapping
-    public List<Vacancy> getAll() {
+    public List<VacancyResponse> getAll() {
         return vacancyService.getAllVacancies();
     }
 
