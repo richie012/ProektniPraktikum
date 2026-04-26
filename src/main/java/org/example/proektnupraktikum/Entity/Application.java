@@ -1,11 +1,15 @@
 package org.example.proektnupraktikum.Entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.example.proektnupraktikum.Entity.Enum.ApplicationStatus;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
+@Setter
 public class Application {
 
     @Id
