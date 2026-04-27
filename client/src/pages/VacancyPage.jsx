@@ -1,15 +1,17 @@
-import {useEffect, useState} from "react";
-import {useParams} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import API from "../api/api";
-import {useAuth} from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
+import { Container, Card, Badge, Button, Spinner, Alert } from "react-bootstrap";
 
 export default function VacancyPage() {
-    const {id} = useParams();
-    const {user} = useAuth();
+    const { id } = useParams();
+    const { user } = useAuth();
     const canApply = Boolean(user && user.role === "STUDENT" && user.studentId);
 
     const [vacancy, setVacancy] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [applyStatus, setApplyStatus] = useState(null); // "success" | "error"
 
     useEffect(() => {
         API.get(`/vacancies/${id}`)
@@ -30,37 +32,77 @@ export default function VacancyPage() {
                 vacancyId: id,
                 coverLetter: "Хочу эту стажировку"
             });
-
-            alert("Отклик отправлен");
+            setApplyStatus("success");
         } catch (e) {
-            alert("Ошибка при отклике");
+            setApplyStatus("error");
         }
     };
 
-    if (loading) return <p>Загрузка...</p>;
-    if (!vacancy) return <p>Вакансия не найдена</p>;
+    if (loading) return (
+        <Container className="mt-5 d-flex justify-content-center">
+            <Spinner animation="border" variant="primary" role="status">
+                <span className="visually-hidden">Загрузка...</span>
+            </Spinner>
+        </Container>
+    );
+
+    if (!vacancy) return (
+        <Container className="mt-5">
+            <Alert variant="warning">⚠️ Вакансия не найдена.</Alert>
+        </Container>
+    );
 
     return (
-        <div style={{padding: "20px"}}>
-            <h1>{vacancy.title}</h1>
+        <Container className="py-4" style={{ maxWidth: "740px" }}>
+            <Link to="/" className="btn btn-outline-secondary btn-sm mb-3">
+                ← Назад к вакансиям
+            </Link>
 
-            <p>
-                <b>Компания:</b> {vacancy.companyName}
-            </p>
+            <Card className="shadow border-0">
+                <Card.Header className="bg-primary text-white py-3">
+                    <h4 className="mb-1">{vacancy.title}</h4>
+                    <Badge bg="light" text="dark" className="fs-6">
+                        🏢 {vacancy.companyName}
+                    </Badge>
+                </Card.Header>
 
-            <p>{vacancy.description}</p>
+                <Card.Body className="p-4">
+                    <h6 className="text-muted text-uppercase mb-2" style={{ letterSpacing: "0.05em" }}>
+                        Описание вакансии
+                    </h6>
+                    <p className="text-dark lh-lg">{vacancy.description}</p>
 
-            <hr/>
+                    <hr className="my-3" />
 
-            {canApply ? (
-                <button onClick={handleApply}>
-                    Откликнуться
-                </button>
-            ) : (
-                <p style={{color: "gray"}}>
-                    {user ? "Отклик доступен только студентам" : "Войдите, чтобы откликнуться"}
-                </p>
-            )}
-        </div>
+                    {applyStatus === "success" && (
+                        <Alert variant="success" className="mb-3">
+                            ✅ Отклик успешно отправлен! Ожидайте ответа работодателя.
+                        </Alert>
+                    )}
+                    {applyStatus === "error" && (
+                        <Alert variant="danger" className="mb-3">
+                            ❌ Ошибка при отправке отклика. Попробуйте ещё раз.
+                        </Alert>
+                    )}
+
+                    {canApply ? (
+                        <Button
+                            variant="primary"
+                            onClick={handleApply}
+                            disabled={applyStatus === "success"}
+                        >
+                            {applyStatus === "success" ? "Отклик отправлен" : "Откликнуться на стажировку"}
+                        </Button>
+                    ) : (
+                        <Alert variant="info" className="mb-0">
+                            ℹ️ {user
+                                ? "Отклик доступен только для студентов с заполненным профилем"
+                                : <>Чтобы откликнуться, <Link to="/login">войдите в систему</Link></>
+                            }
+                        </Alert>
+                    )}
+                </Card.Body>
+            </Card>
+        </Container>
     );
 }

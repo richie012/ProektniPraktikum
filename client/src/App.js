@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Spinner, Container } from "react-bootstrap";
 import Navbar from "./components/Navbar";
 import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
@@ -11,7 +12,13 @@ function RequireAuth({ children }) {
   const { user, isAuthLoading } = useAuth();
 
   if (isAuthLoading) {
-    return <p style={{ padding: "20px" }}>Загрузка...</p>;
+    return (
+      <Container className="d-flex justify-content-center mt-5">
+        <Spinner animation="border" variant="primary" role="status">
+          <span className="visually-hidden">Загрузка...</span>
+        </Spinner>
+      </Container>
+    );
   }
 
   return user ? children : <Navigate to="/login" replace />;

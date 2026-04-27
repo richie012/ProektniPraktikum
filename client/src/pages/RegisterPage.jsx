@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { Container, Card, Form, Button, Alert } from "react-bootstrap";
 
 export default function RegisterPage() {
     const { register } = useAuth();
@@ -9,54 +10,91 @@ export default function RegisterPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [role, setRole] = useState("STUDENT");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const handleRegister = async () => {
+    const handleRegister = async (e) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
         try {
             await register(email, password, role);
-            alert("Аккаунт создан");
             navigate("/profile");
-        } catch (error) {
-            if (error?.response?.status === 409) {
-                alert("Этот email уже зарегистрирован");
-                return;
+        } catch (err) {
+            if (err?.response?.status === 409) {
+                setError("Этот email уже зарегистрирован");
+            } else if (err?.message === "TOKEN_MISSING") {
+                setError("Сервер не вернул JWT токен. Перезапустите backend на актуальной версии.");
+            } else {
+                setError("Ошибка регистрации. Проверьте введённые данные и доступность сервера.");
             }
-            if (error?.message === "TOKEN_MISSING") {
-                alert("Сервер не вернул JWT токен. Перезапустите backend на актуальной версии.");
-                return;
-            }
-            alert("Ошибка регистрации. Проверьте введённые данные и доступность сервера.");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div>
-            <h2>Регистрация</h2>
+        <Container className="d-flex justify-content-center align-items-start" style={{ minHeight: "80vh", paddingTop: "60px" }}>
+            <Card className="shadow" style={{ width: "100%", maxWidth: "420px" }}>
+                <Card.Header className="bg-primary text-white text-center py-3">
+                    <h4 className="mb-0">📝 Регистрация</h4>
+                </Card.Header>
+                <Card.Body className="p-4">
+                    {error && <Alert variant="danger">{error}</Alert>}
+                    <Form onSubmit={handleRegister}>
+                        <Form.Group className="mb-3" controlId="regEmail">
+                            <Form.Label>Адрес электронной почты</Form.Label>
+                            <Form.Control
+                                type="email"
+                                placeholder="example@mail.ru"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                required
+                            />
+                        </Form.Group>
 
-            <input
-                placeholder="Email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-            />
+                        <Form.Group className="mb-3" controlId="regPassword">
+                            <Form.Label>Пароль</Form.Label>
+                            <Form.Control
+                                type="password"
+                                placeholder="Придумайте надёжный пароль"
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                                required
+                            />
+                        </Form.Group>
 
-            <br />
+                        <Form.Group className="mb-4" controlId="regRole">
+                            <Form.Label>Роль в системе</Form.Label>
+                            <Form.Select
+                                value={role}
+                                onChange={e => setRole(e.target.value)}
+                            >
+                                <option value="STUDENT">🎓 Студент — ищу стажировку</option>
+                                <option value="EMPLOYER">🏢 Работодатель — размещаю вакансии</option>
+                            </Form.Select>
+                            <Form.Text className="text-muted">
+                                Роль определяет ваши возможности в системе
+                            </Form.Text>
+                        </Form.Group>
 
-            <input
-                type="password"
-                placeholder="Пароль"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-            />
-
-            <br />
-
-            <select value={role} onChange={e => setRole(e.target.value)}>
-                <option value="STUDENT">Студент</option>
-                <option value="EMPLOYER">Работник</option>
-            </select>
-
-            <br />
-
-            <button onClick={handleRegister}>Создать аккаунт</button>
-        </div>
+                        <Button
+                            type="submit"
+                            variant="primary"
+                            className="w-100"
+                            disabled={loading}
+                        >
+                            {loading ? "Создание аккаунта..." : "Создать аккаунт"}
+                        </Button>
+                    </Form>
+                </Card.Body>
+                <Card.Footer className="text-center text-muted small py-3">
+                    Уже есть аккаунт?{" "}
+                    <Link to="/login" className="text-primary fw-semibold">
+                        Войти
+                    </Link>
+                </Card.Footer>
+            </Card>
+        </Container>
     );
 }
