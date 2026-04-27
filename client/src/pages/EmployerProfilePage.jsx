@@ -216,7 +216,25 @@ export default function EmployerProfilePage({ user }) {
                                             return (
                                                 <tr key={app.id}>
                                                     <td className="text-muted small">{idx + 1}</td>
-                                                    <td className="text-muted small">#{app.studentId || "-"}</td>
+                                                    <td>
+                                                        <div className="fw-semibold">{app.studentName || `Студент #${app.studentId || "-"}`}</div>
+                                                        <div className="small text-muted">ID: {app.studentId || "-"}</div>
+                                                        {app.studentEmail && (
+                                                            <div className="small">
+                                                                <a href={`mailto:${app.studentEmail}`} className="text-decoration-none">
+                                                                    {app.studentEmail}
+                                                                </a>
+                                                            </div>
+                                                        )}
+                                                        {app.studentPhone && (
+                                                            <div className="small text-muted">Тел: {app.studentPhone}</div>
+                                                        )}
+                                                        {app.studentSkills && (
+                                                            <div className="small text-muted text-truncate" style={{ maxWidth: 220 }}>
+                                                                Навыки: {app.studentSkills}
+                                                            </div>
+                                                        )}
+                                                    </td>
                                                     <td>
                                                         <Link
                                                             to={`/vacancy/${app.vacancyId}`}

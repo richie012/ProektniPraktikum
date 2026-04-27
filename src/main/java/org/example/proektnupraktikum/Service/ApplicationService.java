@@ -95,6 +95,14 @@ public class ApplicationService {
         ApplicationResponse response = new ApplicationResponse();
         response.setId(application.getId());
         response.setStudentId(application.getStudent().getId());
+        response.setStudentName(application.getStudent().getName());
+        response.setStudentPhone(application.getStudent().getPhone());
+        response.setStudentSkills(application.getStudent().getSkills());
+        response.setStudentEmail(
+                application.getStudent().getUser() != null
+                        ? application.getStudent().getUser().getEmail()
+                        : null
+        );
         response.setVacancyId(application.getVacancy().getId());
         response.setCreatedAt(application.getCreatedAt());
         response.setStatus(application.getStatus().name());
