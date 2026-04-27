@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
 import VacancyCard from "../components/VacancyCard";
-import { Container, Spinner, Alert, Form, InputGroup, Button } from "react-bootstrap";
+import { Container, Spinner, Alert, Form, InputGroup, Button, Row, Col, Pagination } from "react-bootstrap";
 
 export default function VacanciesPage() {
     const [vacancies, setVacancies] = useState([]);
@@ -9,6 +9,8 @@ export default function VacanciesPage() {
     const [error, setError] = useState("");
     const [searchInput, setSearchInput] = useState("");
     const [activeSearch, setActiveSearch] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 6;
 
     const loadVacancies = async (search = "") => {
         const normalizedSearch = search.trim();
@@ -32,9 +34,21 @@ export default function VacanciesPage() {
         }
     };
 
+    const paginatedVacancies = vacancies.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const totalPages = Math.ceil(vacancies.length / pageSize);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
     useEffect(() => {
         loadVacancies();
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [vacancies.length, activeSearch]);
 
     const handleSearchSubmit = (event) => {
         event.preventDefault();
@@ -106,9 +120,37 @@ export default function VacanciesPage() {
                 </Alert>
             )}
 
-            {vacancies.map(v => (
-                <VacancyCard key={v.id} vacancy={v} />
-            ))}
+            <Row xs={1} sm={2} md={2} lg={3} className="g-3">
+                {paginatedVacancies.map(v => (
+                    <Col key={v.id}>
+                        <VacancyCard vacancy={v} />
+                    </Col>
+                ))}
+            </Row>
+
+            {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-4">
+                    <Pagination>
+                        <Pagination.Prev
+                            disabled={currentPage === 1}
+                            onClick={() => handlePageChange(currentPage - 1)}
+                        />
+                        {[...Array(totalPages)].map((_, idx) => (
+                            <Pagination.Item
+                                key={idx + 1}
+                                active={currentPage === idx + 1}
+                                onClick={() => handlePageChange(idx + 1)}
+                            >
+                                {idx + 1}
+                            </Pagination.Item>
+                        ))}
+                        <Pagination.Next
+                            disabled={currentPage === totalPages}
+                            onClick={() => handlePageChange(currentPage + 1)}
+                        />
+                    </Pagination>
+                </div>
+            )}
         </Container>
     );
 }

@@ -2,6 +2,7 @@ package org.example.proektnupraktikum.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.proektnupraktikum.Dto.Application.Request.ApplicationRequest;
+import org.example.proektnupraktikum.Dto.Application.Request.ReviewRequest;
 import org.example.proektnupraktikum.Dto.Application.Response.ApplicationResponse;
 import org.example.proektnupraktikum.Dto.ReviewDto;
 import org.example.proektnupraktikum.Entity.Application;
@@ -91,6 +92,43 @@ public class ApplicationService {
         application.setStatus(status);
         Application updated = applicationRepository.save(application);
         return toResponse(updated);
+    }
+
+    public ApplicationResponse getApplicationById(Long id, String userEmail) {
+        Application application = applicationRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Отклик не найден"));
+        return toResponse(application);
+    }
+
+    public ApplicationResponse leaveReview(Long applicationId, ReviewRequest request, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        if (user.getRole() != Role.EMPLOYER) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only employer can leave review");
+        }
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+        Long applicationEmployerUserId = application.getVacancy().getEmployer().getUser().getId();
+        if (!applicationEmployerUserId.equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can review only applications for your vacancies");
+        }
+        if (request.getComment() == null || request.getComment().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment must not be empty");
+        }
+        Review review = application.getReview();
+        if (review == null) {
+            review = new Review();
+            review.setApplication(application);
+            review.setEmployer(application.getVacancy().getEmployer());
+            review.setStudent(application.getStudent());
+        }
+        review.setComment(request.getComment().trim());
+        if (request.getRating() != null) {
+            review.setRating(request.getRating());
+        }
+        application.setReview(review);
+        applicationRepository.save(application);
+        return toResponse(application);
     }
 
     private ApplicationResponse toResponse(Application application) {

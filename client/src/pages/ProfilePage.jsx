@@ -1,8 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link, Routes, Route } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Container, Alert } from "react-bootstrap";
 import StudentProfilePage from "./StudentProfilePage";
 import EmployerProfilePage from "./EmployerProfilePage";
+import ApplicationPage from "./ApplicationPage";
 
 export default function ProfilePage() {
     const { user } = useAuth();
@@ -23,7 +24,12 @@ export default function ProfilePage() {
     }
 
     if (user.role === "EMPLOYER") {
-        return <EmployerProfilePage user={user} />;
+        return (
+            <Routes>
+                <Route path="" element={<EmployerProfilePage user={user} />} />
+                <Route path="application/:id" element={<ApplicationPage user={user} />} />
+            </Routes>
+        );
     }
 
     return (

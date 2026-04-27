@@ -94,55 +94,52 @@ export default function VacancyPage() {
                     </Badge>
                 </Card.Header>
 
-                <Card.Body className="p-4">
+                <Card.Body className="p-4 p-md-4 p-sm-2">
+                    {/* Форма отклика теперь сразу под заголовком */}
+                    <div className="mb-4">
+                        {applyStatus === "success" && (
+                            <Alert variant="success" className="mb-3">
+                                ✅ Отклик успешно отправлен! Ожидайте ответа работодателя.
+                            </Alert>
+                        )}
+                        {applyStatus === "error" && (
+                            <Alert variant="danger" className="mb-3">
+                                ❌ Ошибка при отправке отклика. Попробуйте ещё раз.
+                            </Alert>
+                        )}
+                        {canApply && checkingApplication && (
+                            <div className="d-flex align-items-center gap-2 text-muted">
+                                <Spinner animation="border" size="sm" />
+                                <span>Проверяем вашу заявку...</span>
+                            </div>
+                        )}
+                        {canApply && !checkingApplication && existingApplication && (
+                            <Alert variant="info" className="mb-0 d-flex justify-content-between align-items-center">
+                                <span>ℹ️ Вы уже откликнулись на эту вакансию.</span>
+                                <Button as={Link} to="/profile?tab=applications" variant="outline-primary" size="sm">
+                                    Перейти к заявке
+                                </Button>
+                            </Alert>
+                        )}
+                        {canApply && !checkingApplication && !existingApplication && (
+                            <Button variant="success" size="lg" className="w-100 mt-2 mb-2" onClick={handleApply}>
+                                Откликнуться на стажировку
+                            </Button>
+                        )}
+                        {!canApply && (
+                            <Alert variant="info" className="mb-0">
+                                ℹ️ {user
+                                    ? "Отклик доступен только для студентов с заполненным профилем"
+                                    : <>Чтобы откликнуться, <Link to="/login">войдите в систему</Link></>
+                                }
+                            </Alert>
+                        )}
+                    </div>
+
                     <h6 className="text-muted text-uppercase mb-2" style={{ letterSpacing: "0.05em" }}>
                         Описание вакансии
                     </h6>
                     <p className="text-dark lh-lg">{vacancy.description}</p>
-
-                    <hr className="my-3" />
-
-                    {applyStatus === "success" && (
-                        <Alert variant="success" className="mb-3">
-                            ✅ Отклик успешно отправлен! Ожидайте ответа работодателя.
-                        </Alert>
-                    )}
-                    {applyStatus === "error" && (
-                        <Alert variant="danger" className="mb-3">
-                            ❌ Ошибка при отправке отклика. Попробуйте ещё раз.
-                        </Alert>
-                    )}
-
-                    {canApply && checkingApplication && (
-                        <div className="d-flex align-items-center gap-2 text-muted">
-                            <Spinner animation="border" size="sm" />
-                            <span>Проверяем вашу заявку...</span>
-                        </div>
-                    )}
-
-                    {canApply && !checkingApplication && existingApplication && (
-                        <Alert variant="info" className="mb-0 d-flex justify-content-between align-items-center">
-                            <span>ℹ️ Вы уже откликнулись на эту вакансию.</span>
-                            <Button as={Link} to="/profile?tab=applications" variant="outline-primary" size="sm">
-                                Перейти к заявке
-                            </Button>
-                        </Alert>
-                    )}
-
-                    {canApply && !checkingApplication && !existingApplication && (
-                        <Button variant="primary" onClick={handleApply}>
-                            Откликнуться на стажировку
-                        </Button>
-                    )}
-
-                    {!canApply && (
-                        <Alert variant="info" className="mb-0">
-                            ℹ️ {user
-                                ? "Отклик доступен только для студентов с заполненным профилем"
-                                : <>Чтобы откликнуться, <Link to="/login">войдите в систему</Link></>
-                            }
-                        </Alert>
-                    )}
                 </Card.Body>
             </Card>
         </Container>

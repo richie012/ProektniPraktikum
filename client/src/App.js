@@ -7,6 +7,7 @@ import RegisterPage from "./pages/RegisterPage";
 import VacanciesPage from "./pages/VacanciesPage";
 import VacancyPage from "./pages/VacancyPage";
 import ProfilePage from "./pages/ProfilePage";
+import ApplicationPage from "./pages/ApplicationPage";
 
 function RequireAuth({ children }) {
   const { user, isAuthLoading } = useAuth();
@@ -25,24 +26,33 @@ function RequireAuth({ children }) {
 }
 
 function App() {
+  const { user } = useAuth();
   return (
-      <BrowserRouter>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<VacanciesPage />} />
-          <Route path="/vacancy/:id" element={<VacancyPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route
-            path="/profile"
-            element={(
-              <RequireAuth>
-                <ProfilePage />
-              </RequireAuth>
-            )}
-          />
-        </Routes>
-      </BrowserRouter>
+    <BrowserRouter>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<VacanciesPage />} />
+        <Route path="/vacancy/:id" element={<VacancyPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/profile/*"
+          element={(
+            <RequireAuth>
+              <ProfilePage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/application/:id"
+          element={(
+            <RequireAuth>
+              <ApplicationPage user={user} />
+            </RequireAuth>
+          )}
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
