@@ -4,6 +4,11 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
 
+  sql:
+    init:
+      mode: always
+
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
