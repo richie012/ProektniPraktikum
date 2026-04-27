@@ -23,6 +23,8 @@ export default function EmployerProfilePage({ user }) {
     const [applications, setApplications] = useState([]);
     const [appsLoading, setAppsLoading] = useState(false);
     const [appsError, setAppsError] = useState("");
+    const [statusActionLoadingId, setStatusActionLoadingId] = useState(null);
+    const [statusActionError, setStatusActionError] = useState("");
 
     const [vacancyTitle, setVacancyTitle] = useState("");
     const [vacancyDescription, setVacancyDescription] = useState("");
@@ -101,6 +103,28 @@ export default function EmployerProfilePage({ user }) {
         }
     };
 
+    const handleUpdateApplicationStatus = async (applicationId, status) => {
+        setStatusActionError("");
+        setStatusActionLoadingId(applicationId);
+
+        try {
+            const res = await API.patch(`/applications/${applicationId}/status`, { status });
+            setApplications((prev) => prev.map((item) => (
+                item.id === applicationId ? { ...item, status: res.data.status } : item
+            )));
+        } catch (err) {
+            if (err?.response?.status === 409) {
+                setStatusActionError("Эту заявку уже обработали ранее. Обновите список.");
+            } else if (err?.response?.status === 403) {
+                setStatusActionError("Нельзя изменить статус чужой заявки.");
+            } else {
+                setStatusActionError("Не удалось изменить статус заявки. Попробуйте позже.");
+            }
+        } finally {
+            setStatusActionLoadingId(null);
+        }
+    };
+
     return (
         <Container className="mt-5" style={{ maxWidth: "680px" }}>
             <Card className="shadow border-0 mb-4">
@@ -166,6 +190,9 @@ export default function EmployerProfilePage({ user }) {
                                 </div>
                             )}
                             {!appsLoading && appsError && <Alert variant="danger">⚠️ {appsError}</Alert>}
+                            {!appsLoading && !appsError && statusActionError && (
+                                <Alert variant="danger">⚠️ {statusActionError}</Alert>
+                            )}
                             {!appsLoading && !appsError && applications.length === 0 && (
                                 <Alert variant="info">ℹ️ На ваши вакансии пока нет откликов.</Alert>
                             )}
@@ -178,11 +205,14 @@ export default function EmployerProfilePage({ user }) {
                                             <th>Вакансия</th>
                                             <th>Статус</th>
                                             <th>Дата подачи</th>
+                                            <th>Действия</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {applications.map((app, idx) => {
                                             const st = STATUS_META[app.status] || { label: app.status, bg: "secondary", text: "white" };
+                                            const isPending = app.status === "PENDING";
+                                            const isProcessing = statusActionLoadingId === app.id;
                                             return (
                                                 <tr key={app.id}>
                                                     <td className="text-muted small">{idx + 1}</td>
@@ -199,6 +229,30 @@ export default function EmployerProfilePage({ user }) {
                                                         <Badge bg={st.bg} text={st.text} className="px-2 py-1">{st.label}</Badge>
                                                     </td>
                                                     <td className="text-muted small">{formatDate(app.createdAt)}</td>
+                                                    <td>
+                                                        {isPending ? (
+                                                            <div className="d-flex gap-2">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="success"
+                                                                    disabled={isProcessing}
+                                                                    onClick={() => handleUpdateApplicationStatus(app.id, "ACCEPTED")}
+                                                                >
+                                                                    {isProcessing ? "..." : "Принять"}
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline-danger"
+                                                                    disabled={isProcessing}
+                                                                    onClick={() => handleUpdateApplicationStatus(app.id, "REJECTED")}
+                                                                >
+                                                                    {isProcessing ? "..." : "Отклонить"}
+                                                                </Button>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-muted small">Обработано</span>
+                                                        )}
+                                                    </td>
                                                 </tr>
                                             );
                                         })}
