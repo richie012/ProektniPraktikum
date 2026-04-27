@@ -10,3 +10,13 @@ VALUES (1, 1, 'John Doe', '+123456', 'Java, Spring');
 
 INSERT INTO vacancy (id, title, description, employer_id, created_at)
 VALUES (1, 'Java Intern', 'Work with Spring Boot', 1, NOW());
+
+SELECT setval(
+               pg_get_serial_sequence('student_profile', 'id'),
+               (SELECT MAX(id) FROM student_profile)
+       );
+
+SELECT setval(
+               pg_get_serial_sequence('users', 'id'),
+               (SELECT MAX(id) FROM users)
+       );
