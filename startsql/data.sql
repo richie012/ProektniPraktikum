@@ -26,6 +26,11 @@ SELECT setval(
                (SELECT MAX(id) FROM employer)
        );
 
+SELECT setval(
+               pg_get_serial_sequence('vacancy', 'id'),
+               (SELECT MAX(id) FROM vacancy)
+       );
+
 
 CREATE INDEX idx_vacancy_fts
     ON vacancy

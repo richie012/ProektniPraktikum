@@ -115,13 +115,14 @@ public class AuthController {
                 response.put("studentId", profile.getId());
             }
         } else if (user.getRole() == Role.EMPLOYER) {
-            Employer employer = employerRepository
-                    .findByUser(user)
-                    .orElse(null);
+            Employer employer = employerRepository.findByUser(user).orElseGet(() -> {
+                Employer created = new Employer();
+                created.setUser(user);
+                created.setCompanyName("Company");
+                return employerRepository.save(created);
+            });
 
-            if (employer != null) {
-                response.put("employerId", employer.getId());
-            }
+            response.put("employerId", employer.getId());
         }
 
         return response;
