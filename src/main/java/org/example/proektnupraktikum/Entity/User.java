@@ -22,4 +22,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role; // STUDENT, EMPLOYER
 
+    @OneToOne(mappedBy = "user")
+    private Employer employer;
+
 }

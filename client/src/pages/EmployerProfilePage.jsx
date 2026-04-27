@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import API from "../api/api";
 import { Container, Card, Badge, Alert, Spinner, Tabs, Tab, Table, Form, Button } from "react-bootstrap";
@@ -31,6 +31,11 @@ export default function EmployerProfilePage({ user }) {
     const [createLoading, setCreateLoading] = useState(false);
     const [createError, setCreateError] = useState("");
     const [createdVacancy, setCreatedVacancy] = useState(null);
+
+    const [reviewLoadingId, setReviewLoadingId] = useState(null);
+    const [reviewError, setReviewError] = useState("");
+    const [reviewText, setReviewText] = useState("");
+    const reviewInputRefs = useRef({});
 
     const requestedTab = searchParams.get("tab");
     const allowedTabs = ["profile", "applications", "create-vacancy"];
@@ -125,6 +130,31 @@ export default function EmployerProfilePage({ user }) {
         }
     };
 
+    const handleLeaveReview = async (applicationId) => {
+        setReviewError("");
+        setReviewLoadingId(applicationId);
+        try {
+            const comment = reviewText.trim();
+            if (!comment) {
+                setReviewError("Отзыв не может быть пустым.");
+                setReviewLoadingId(null);
+                return;
+            }
+            await API.post(`/applications/${applicationId}/review`, { comment }, {
+                headers: { 'X-User-Email': user.email }
+            });
+            // обновить отзыв в заявке
+            setApplications((prev) => prev.map((item) =>
+                item.id === applicationId ? { ...item, review: { ...item.review, comment } } : item
+            ));
+            setReviewText("");
+        } catch (err) {
+            setReviewError("Не удалось отправить отзыв. Попробуйте позже.");
+        } finally {
+            setReviewLoadingId(null);
+        }
+    };
+
     return (
         <Container className="mt-5" style={{ maxWidth: "680px" }}>
             <Card className="shadow border-0 mb-4">
@@ -206,6 +236,7 @@ export default function EmployerProfilePage({ user }) {
                                             <th>Статус</th>
                                             <th>Дата подачи</th>
                                             <th>Действия</th>
+                                            <th>Отзыв</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -213,6 +244,7 @@ export default function EmployerProfilePage({ user }) {
                                             const st = STATUS_META[app.status] || { label: app.status, bg: "secondary", text: "white" };
                                             const isPending = app.status === "PENDING";
                                             const isProcessing = statusActionLoadingId === app.id;
+                                            const isAccepted = app.status === "ACCEPTED";
                                             return (
                                                 <tr key={app.id}>
                                                     <td className="text-muted small">{idx + 1}</td>
@@ -269,6 +301,39 @@ export default function EmployerProfilePage({ user }) {
                                                             </div>
                                                         ) : (
                                                             <span className="text-muted small">Обработано</span>
+                                                        )}
+                                                    </td>
+                                                    <td style={{ minWidth: 180 }}>
+                                                        {isAccepted && (
+                                                            app.review && app.review.comment ? (
+                                                                <div className="text-success small">Отзыв: {app.review.comment}</div>
+                                                            ) : (
+                                                                <div>
+                                                                    <Form.Group className="mb-2">
+                                                                        <Form.Control
+                                                                            as="textarea"
+                                                                            rows={2}
+                                                                            value={reviewText}
+                                                                            ref={el => reviewInputRefs.current[app.id] = el}
+                                                                            onChange={e => setReviewText(e.target.value)}
+                                                                            placeholder="Оставьте отзыв..."
+                                                                            maxLength={500}
+                                                                            disabled={reviewLoadingId === app.id}
+                                                                        />
+                                                                    </Form.Group>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="primary"
+                                                                        disabled={reviewLoadingId === app.id}
+                                                                        onClick={() => handleLeaveReview(app.id)}
+                                                                    >
+                                                                        {reviewLoadingId === app.id ? "Сохраняю..." : "Оставить отзыв"}
+                                                                    </Button>
+                                                                    {reviewError && (
+                                                                        <div className="text-danger small mt-1">{reviewError}</div>
+                                                                    )}
+                                                                </div>
+                                                            )
                                                         )}
                                                     </td>
                                                 </tr>
@@ -333,4 +398,3 @@ export default function EmployerProfilePage({ user }) {
         </Container>
     );
 }
-

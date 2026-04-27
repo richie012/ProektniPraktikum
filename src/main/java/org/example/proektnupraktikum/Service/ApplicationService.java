@@ -3,12 +3,14 @@ package org.example.proektnupraktikum.Service;
 import lombok.RequiredArgsConstructor;
 import org.example.proektnupraktikum.Dto.Application.Request.ApplicationRequest;
 import org.example.proektnupraktikum.Dto.Application.Response.ApplicationResponse;
+import org.example.proektnupraktikum.Dto.ReviewDto;
 import org.example.proektnupraktikum.Entity.Application;
 import org.example.proektnupraktikum.Entity.Enum.ApplicationStatus;
 import org.example.proektnupraktikum.Entity.Enum.Role;
 import org.example.proektnupraktikum.Entity.User;
 import org.example.proektnupraktikum.Entity.StudentProfile;
 import org.example.proektnupraktikum.Entity.Vacancy;
+import org.example.proektnupraktikum.Entity.Review;
 import org.example.proektnupraktikum.Repository.ApplicationRepository;
 import org.example.proektnupraktikum.Repository.UserRepository;
 import org.example.proektnupraktikum.Repository.StudentProfileRepository;
@@ -106,6 +108,16 @@ public class ApplicationService {
         response.setVacancyId(application.getVacancy().getId());
         response.setCreatedAt(application.getCreatedAt());
         response.setStatus(application.getStatus().name());
+        if (application.getReview() != null) {
+            Review review = application.getReview();
+            ReviewDto dto = new ReviewDto();
+            dto.setId(review.getId());
+            dto.setRating(review.getRating());
+            dto.setComment(review.getComment());
+            dto.setEmployerId(review.getEmployer() != null ? review.getEmployer().getId() : null);
+            dto.setStudentId(review.getStudent() != null ? review.getStudent().getId() : null);
+            response.setReview(dto);
+        }
         return response;
     }
 }

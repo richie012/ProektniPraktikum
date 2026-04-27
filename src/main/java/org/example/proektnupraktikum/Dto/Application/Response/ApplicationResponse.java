@@ -2,6 +2,7 @@ package org.example.proektnupraktikum.Dto.Application.Response;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.example.proektnupraktikum.Dto.ReviewDto;
 
 import java.time.LocalDateTime;
 
@@ -18,5 +19,7 @@ public class ApplicationResponse {
     private Long vacancyId;
     private String status;
     private LocalDateTime createdAt;
+
+    private ReviewDto review; // отзыв работодателя
 
 }

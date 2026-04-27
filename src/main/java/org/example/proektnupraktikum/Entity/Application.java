@@ -27,4 +27,7 @@ public class Application {
 
     private LocalDateTime createdAt;
 
+    @OneToOne
+    private Review review;
+
 }
