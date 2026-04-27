@@ -3,9 +3,11 @@ package org.example.proektnupraktikum.Controller;
 import lombok.RequiredArgsConstructor;
 import org.example.proektnupraktikum.Dto.Auth.Request.AuthRequest;
 import org.example.proektnupraktikum.Dto.Auth.Response.AuthResponse;
+import org.example.proektnupraktikum.Entity.Employer;
 import org.example.proektnupraktikum.Entity.Enum.Role;
 import org.example.proektnupraktikum.Entity.StudentProfile;
 import org.example.proektnupraktikum.Entity.User;
+import org.example.proektnupraktikum.Repository.EmployerRepository;
 import org.example.proektnupraktikum.Repository.StudentProfileRepository;
 import org.example.proektnupraktikum.Repository.UserRepository;
 import org.example.proektnupraktikum.Service.Security.JwtService;
@@ -28,6 +30,7 @@ import java.util.Map;
 public class AuthController {
 
     private final StudentProfileRepository studentProfileRepository;
+    private final EmployerRepository employerRepository;
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -53,6 +56,11 @@ public class AuthController {
             StudentProfile profile = new StudentProfile();
             profile.setUser(user);
             studentProfileRepository.save(profile);
+        } else if (role == Role.EMPLOYER) {
+            Employer employer = new Employer();
+            employer.setUser(user);
+            employer.setCompanyName("Company");
+            employerRepository.save(employer);
         }
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
@@ -105,6 +113,14 @@ public class AuthController {
 
             if (profile != null) {
                 response.put("studentId", profile.getId());
+            }
+        } else if (user.getRole() == Role.EMPLOYER) {
+            Employer employer = employerRepository
+                    .findByUser(user)
+                    .orElse(null);
+
+            if (employer != null) {
+                response.put("employerId", employer.getId());
             }
         }
 

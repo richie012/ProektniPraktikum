@@ -21,6 +21,12 @@ SELECT setval(
                (SELECT MAX(id) FROM users)
        );
 
+SELECT setval(
+               pg_get_serial_sequence('users', 'id'),
+               (SELECT MAX(id) FROM employer)
+       );
+
+
 CREATE INDEX idx_vacancy_fts
     ON vacancy
         USING GIN (to_tsvector('russian', title || ' ' || coalesce(description, '')));

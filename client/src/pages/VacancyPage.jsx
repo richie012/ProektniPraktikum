@@ -12,6 +12,8 @@ export default function VacancyPage() {
     const [vacancy, setVacancy] = useState(null);
     const [loading, setLoading] = useState(true);
     const [applyStatus, setApplyStatus] = useState(null); // "success" | "error"
+    const [existingApplication, setExistingApplication] = useState(null);
+    const [checkingApplication, setCheckingApplication] = useState(false);
 
     useEffect(() => {
         API.get(`/vacancies/${id}`)
@@ -25,14 +27,40 @@ export default function VacancyPage() {
             });
     }, [id]);
 
+    useEffect(() => {
+        if (!canApply) {
+            setExistingApplication(null);
+            return;
+        }
+
+        setCheckingApplication(true);
+        API.get("/applications", { params: { studentId: user.studentId } })
+            .then((res) => {
+                const applications = Array.isArray(res.data) ? res.data : [];
+                const found = applications.find((app) => Number(app.vacancyId) === Number(id));
+                setExistingApplication(found || null);
+            })
+            .catch((err) => {
+                console.error(err);
+                setExistingApplication(null);
+            })
+            .finally(() => setCheckingApplication(false));
+    }, [id, canApply, user?.studentId]);
+
     const handleApply = async () => {
         try {
-            await API.post("/applications", {
+            const response = await API.post("/applications", {
                 studentId: user.studentId,
                 vacancyId: id,
                 coverLetter: "Хочу эту стажировку"
             });
             setApplyStatus("success");
+            setExistingApplication({
+                id: response.data?.id,
+                vacancyId: Number(id),
+                status: response.data?.status || "PENDING",
+                createdAt: response.data?.createdAt || null,
+            });
         } catch (e) {
             setApplyStatus("error");
         }
@@ -85,15 +113,29 @@ export default function VacancyPage() {
                         </Alert>
                     )}
 
-                    {canApply ? (
-                        <Button
-                            variant="primary"
-                            onClick={handleApply}
-                            disabled={applyStatus === "success"}
-                        >
-                            {applyStatus === "success" ? "Отклик отправлен" : "Откликнуться на стажировку"}
+                    {canApply && checkingApplication && (
+                        <div className="d-flex align-items-center gap-2 text-muted">
+                            <Spinner animation="border" size="sm" />
+                            <span>Проверяем вашу заявку...</span>
+                        </div>
+                    )}
+
+                    {canApply && !checkingApplication && existingApplication && (
+                        <Alert variant="info" className="mb-0 d-flex justify-content-between align-items-center">
+                            <span>ℹ️ Вы уже откликнулись на эту вакансию.</span>
+                            <Button as={Link} to="/profile?tab=applications" variant="outline-primary" size="sm">
+                                Перейти к заявке
+                            </Button>
+                        </Alert>
+                    )}
+
+                    {canApply && !checkingApplication && !existingApplication && (
+                        <Button variant="primary" onClick={handleApply}>
+                            Откликнуться на стажировку
                         </Button>
-                    ) : (
+                    )}
+
+                    {!canApply && (
                         <Alert variant="info" className="mb-0">
                             ℹ️ {user
                                 ? "Отклик доступен только для студентов с заполненным профилем"

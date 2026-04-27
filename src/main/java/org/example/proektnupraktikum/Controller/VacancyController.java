@@ -24,4 +24,5 @@ public class VacancyController {
     public Vacancy getById(@PathVariable Long id) {
         return vacancyService.getVacancyById(id);
     }
+
 }

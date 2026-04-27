@@ -7,6 +7,7 @@ import lombok.Setter;
 @Setter
 public class ApplicationRequest {
 
+    private Long EmployerId;
     private Long studentId;
     private Long vacancyId;
     private String coverLetter;

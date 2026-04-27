@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class ApplicationResponse {
 
     private Long id;
+    private Long studentId;
     private Long vacancyId;
     private String status;
     private LocalDateTime createdAt;
