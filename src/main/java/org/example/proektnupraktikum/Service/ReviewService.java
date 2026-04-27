@@ -60,7 +60,9 @@ public class ReviewService {
         Review createdReview = reviewRepository.save(review);
 
         application.setStatus(ApplicationStatus.CLOSED);
+        application.setReview(createdReview);
         applicationRepository.save(application);
+
 
         return new ReviewPostResponseDto(
                 createdReview.getId(),

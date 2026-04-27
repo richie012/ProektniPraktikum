@@ -7,6 +7,7 @@ const STATUS_META = {
     PENDING: { label: "На рассмотрении", bg: "warning", text: "dark" },
     ACCEPTED: { label: "Принята", bg: "success", text: "white" },
     REJECTED: { label: "Отклонена", bg: "danger", text: "white" },
+    CLOSED: { label: "Закрыта", bg: "secondary", text: "white" },
 };
 
 function formatDate(iso) {
@@ -200,10 +201,13 @@ export default function EmployerProfilePage({ user }) {
                                             <tbody>
                                                 {applications.map((app, idx) => {
                                                     const st = STATUS_META[app.status] || { label: app.status, bg: "secondary", text: "white" };
+                                                    const isClosed = app.status === "CLOSED";
+                                                    const isRejected = app.status === "REJECTED";
                                                     return (
                                                         <tr
                                                             key={app.id}
-                                                            style={{ cursor: "pointer" }}
+                                                            style={{ cursor: "pointer", opacity: isClosed || isRejected ? 0.6 : 1, background: isClosed ? "#f8f9fa" : undefined }}
+                                                            title={isClosed ? "Стажировка закрыта (отзыв оставлен)" : isRejected ? "Заявка отклонена" : undefined}
                                                             onClick={() => window.location.href = `/application/${app.id}`}
                                                         >
                                                             <td className="text-muted small">{idx + 1}</td>
