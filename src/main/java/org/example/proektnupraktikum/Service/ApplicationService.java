@@ -4,17 +4,17 @@ import lombok.RequiredArgsConstructor;
 import org.example.proektnupraktikum.Dto.Application.Request.ApplicationRequest;
 import org.example.proektnupraktikum.Dto.Application.Request.ReviewRequest;
 import org.example.proektnupraktikum.Dto.Application.Response.ApplicationResponse;
-import org.example.proektnupraktikum.Dto.ReviewDto;
 import org.example.proektnupraktikum.Entity.Application;
 import org.example.proektnupraktikum.Entity.Enum.ApplicationStatus;
 import org.example.proektnupraktikum.Entity.Enum.Role;
-import org.example.proektnupraktikum.Entity.User;
-import org.example.proektnupraktikum.Entity.StudentProfile;
-import org.example.proektnupraktikum.Entity.Vacancy;
 import org.example.proektnupraktikum.Entity.Review;
+import org.example.proektnupraktikum.Entity.StudentProfile;
+import org.example.proektnupraktikum.Entity.User;
+import org.example.proektnupraktikum.Entity.Vacancy;
+import org.example.proektnupraktikum.Service.Mapper.ApplicationMapper;
 import org.example.proektnupraktikum.Repository.ApplicationRepository;
-import org.example.proektnupraktikum.Repository.UserRepository;
 import org.example.proektnupraktikum.Repository.StudentProfileRepository;
+import org.example.proektnupraktikum.Repository.UserRepository;
 import org.example.proektnupraktikum.Repository.VacancyRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,14 +31,16 @@ public class ApplicationService {
     private final StudentProfileRepository studentRepository;
     private final VacancyRepository vacancyRepository;
     private final UserRepository userRepository;
+    private final ApplicationMapper applicationMapper;
 
-    public Application apply(ApplicationRequest request) {
-
+    public ApplicationResponse apply(ApplicationRequest request) {
         StudentProfile student = studentRepository.findById(request.getStudentId())
-                .orElseThrow(() -> new RuntimeException("Student with id %d not found".formatted(request.getStudentId())));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Student with id %d not found".formatted(request.getStudentId())));
 
         Vacancy vacancy = vacancyRepository.findById(request.getVacancyId())
-                .orElseThrow(() -> new RuntimeException("Vacancy with id %d not found".formatted(request.getVacancyId())));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Vacancy with id %d not found".formatted(request.getVacancyId())));
 
         Application application = new Application();
         application.setStudent(student);
@@ -47,22 +48,24 @@ public class ApplicationService {
         application.setStatus(ApplicationStatus.PENDING);
         application.setCreatedAt(LocalDateTime.now());
 
-        return applicationRepository.save(application);
+        return applicationMapper.toResponse(applicationRepository.save(application));
     }
 
     public List<ApplicationResponse> findApplicationsById(Long studentId, Long employerId) {
-        List<Application> applications;
+        List<Application> applications = studentId != null
+                ? applicationRepository.findApplicationsByStudentId(studentId)
+                : applicationRepository.findApplicationsByVacancyEmployerId(employerId);
 
-        if (studentId != null) {
-            applications = applicationRepository.findApplicationsByStudentId(studentId);
-        } else {
-            applications = applicationRepository.findApplicationsByVacancyEmployerId(employerId);
-        }
+        return applications.stream()
+                .map(applicationMapper::toResponse)
+                .toList();
+    }
 
-        return applications
-                .stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    public ApplicationResponse getApplicationById(Long id, String userEmail) {
+        Application application = applicationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+
+        return applicationMapper.toResponse(application);
     }
 
     public ApplicationResponse updateStatus(Long applicationId, ApplicationStatus status, String userEmail) {
@@ -70,92 +73,66 @@ public class ApplicationService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status must be ACCEPTED or REJECTED");
         }
 
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
-
-        if (user.getRole() != Role.EMPLOYER) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only employer can update application status");
-        }
-
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
-
-        Long applicationEmployerUserId = application.getVacancy().getEmployer().getUser().getId();
-        if (!applicationEmployerUserId.equals(user.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can update only applications for your vacancies");
-        }
+        User user = findEmployerUser(userEmail);
+        Application application = findApplication(applicationId);
+        validateOwnership(application, user);
 
         if (application.getStatus() != ApplicationStatus.PENDING) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Only PENDING applications can be updated");
         }
 
         application.setStatus(status);
-        Application updated = applicationRepository.save(application);
-        return toResponse(updated);
-    }
-
-    public ApplicationResponse getApplicationById(Long id, String userEmail) {
-        Application application = applicationRepository.findById(id)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Отклик не найден"));
-        return toResponse(application);
+        return applicationMapper.toResponse(applicationRepository.save(application));
     }
 
     public ApplicationResponse leaveReview(Long applicationId, ReviewRequest request, String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
-        if (user.getRole() != Role.EMPLOYER) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only employer can leave review");
-        }
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
-        Long applicationEmployerUserId = application.getVacancy().getEmployer().getUser().getId();
-        if (!applicationEmployerUserId.equals(user.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can review only applications for your vacancies");
-        }
-        if (request.getComment() == null || request.getComment().trim().isEmpty()) {
+        if (request.getComment() == null || request.getComment().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment must not be empty");
         }
-        Review review = application.getReview();
-        if (review == null) {
-            review = new Review();
-            review.setApplication(application);
-            review.setEmployer(application.getVacancy().getEmployer());
-            review.setStudent(application.getStudent());
-        }
+
+        User user = findEmployerUser(userEmail);
+        Application application = findApplication(applicationId);
+        validateOwnership(application, user);
+
+        Review review = resolveReview(application);
         review.setComment(request.getComment().trim());
         if (request.getRating() != null) {
             review.setRating(request.getRating());
         }
+
         application.setReview(review);
-        applicationRepository.save(application);
-        return toResponse(application);
+        return applicationMapper.toResponse(applicationRepository.save(application));
     }
 
-    private ApplicationResponse toResponse(Application application) {
-        ApplicationResponse response = new ApplicationResponse();
-        response.setId(application.getId());
-        response.setStudentId(application.getStudent().getId());
-        response.setStudentName(application.getStudent().getName());
-        response.setStudentPhone(application.getStudent().getPhone());
-        response.setStudentSkills(application.getStudent().getSkills());
-        response.setStudentEmail(
-                application.getStudent().getUser() != null
-                        ? application.getStudent().getUser().getEmail()
-                        : null
-        );
-        response.setVacancyId(application.getVacancy().getId());
-        response.setCreatedAt(application.getCreatedAt());
-        response.setStatus(application.getStatus().name());
-        if (application.getReview() != null) {
-            Review review = application.getReview();
-            ReviewDto dto = new ReviewDto();
-            dto.setId(review.getId());
-            dto.setRating(review.getRating());
-            dto.setComment(review.getComment());
-            dto.setEmployerId(review.getEmployer() != null ? review.getEmployer().getId() : null);
-            dto.setStudentId(review.getStudent() != null ? review.getStudent().getId() : null);
-            response.setReview(dto);
+    private User findEmployerUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        if (user.getRole() != Role.EMPLOYER) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only employer can perform this action");
         }
-        return response;
+        return user;
+    }
+
+    private Application findApplication(Long applicationId) {
+        return applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+    }
+
+    private void validateOwnership(Application application, User user) {
+        Long ownerId = application.getVacancy().getEmployer().getUser().getId();
+        if (!ownerId.equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage applications for your own vacancies");
+        }
+    }
+
+    private Review resolveReview(Application application) {
+        Review review = application.getReview();
+        if (review != null) return review;
+
+        Review newReview = new Review();
+        newReview.setApplication(application);
+        newReview.setEmployer(application.getVacancy().getEmployer());
+        newReview.setStudent(application.getStudent());
+        return newReview;
     }
 }

@@ -31,7 +31,7 @@ public class ApplicationController {
      * @return принятая заявка
      */
     @PostMapping
-    public Application apply(@RequestBody ApplicationRequest request) {
+    public ApplicationResponse apply(@RequestBody ApplicationRequest request) {
         return applicationService.apply(request);
     }
 
