@@ -7,7 +7,10 @@ import org.example.proektnupraktikum.Entity.Employer;
 import org.example.proektnupraktikum.Entity.Enum.Role;
 import org.example.proektnupraktikum.Entity.User;
 import org.example.proektnupraktikum.Entity.Vacancy;
+import org.example.proektnupraktikum.Exception.BadRequestException;
+import org.example.proektnupraktikum.Exception.ForbiddenException;
 import org.example.proektnupraktikum.Exception.NotFoundException;
+import org.example.proektnupraktikum.Exception.UnauthorizedException;
 import org.example.proektnupraktikum.Service.Mapper.VacancyMapper;
 import org.example.proektnupraktikum.Repository.EmployerRepository;
 import org.example.proektnupraktikum.Repository.UserRepository;
@@ -65,15 +68,15 @@ public class VacancyService {
         if (request == null
                 || request.getTitle() == null || request.getTitle().isBlank()
                 || request.getDescription() == null || request.getDescription().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Title and description are required");
+            throw new BadRequestException("Title and description are required");
         }
     }
 
     private User findEmployerUser(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+                .orElseThrow(() -> new UnauthorizedException("User by email: not found".formatted(email)));
         if (user.getRole() != Role.EMPLOYER) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only employer can create vacancies");
+            throw new ForbiddenException("Only employer can create vacancies");
         }
         return user;
     }

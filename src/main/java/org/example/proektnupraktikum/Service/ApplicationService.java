@@ -11,6 +11,10 @@ import org.example.proektnupraktikum.Entity.Review;
 import org.example.proektnupraktikum.Entity.StudentProfile;
 import org.example.proektnupraktikum.Entity.User;
 import org.example.proektnupraktikum.Entity.Vacancy;
+import org.example.proektnupraktikum.Exception.BadRequestException;
+import org.example.proektnupraktikum.Exception.ConflictException;
+import org.example.proektnupraktikum.Exception.ForbiddenException;
+import org.example.proektnupraktikum.Exception.NotFoundException;
 import org.example.proektnupraktikum.Service.Mapper.ApplicationMapper;
 import org.example.proektnupraktikum.Repository.ApplicationRepository;
 import org.example.proektnupraktikum.Repository.StudentProfileRepository;
@@ -35,11 +39,11 @@ public class ApplicationService {
 
     public ApplicationResponse apply(ApplicationRequest request) {
         StudentProfile student = studentRepository.findById(request.getStudentId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                .orElseThrow(() -> new NotFoundException(
                         "Student with id %d not found".formatted(request.getStudentId())));
 
         Vacancy vacancy = vacancyRepository.findById(request.getVacancyId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                .orElseThrow(() -> new NotFoundException(
                         "Vacancy with id %d not found".formatted(request.getVacancyId())));
 
         Application application = new Application();
@@ -63,14 +67,14 @@ public class ApplicationService {
 
     public ApplicationResponse getApplicationById(Long id, String userEmail) {
         Application application = applicationRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+                .orElseThrow(() -> new NotFoundException("Application not found"));
 
         return applicationMapper.toResponse(application);
     }
 
     public ApplicationResponse updateStatus(Long applicationId, ApplicationStatus status, String userEmail) {
         if (status == null || status == ApplicationStatus.PENDING) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status must be ACCEPTED or REJECTED");
+            throw new BadRequestException("Status must be ACCEPTED or REJECTED");
         }
 
         User user = findEmployerUser(userEmail);
@@ -78,7 +82,7 @@ public class ApplicationService {
         validateOwnership(application, user);
 
         if (application.getStatus() != ApplicationStatus.PENDING) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Only PENDING applications can be updated");
+            throw new ConflictException("Only PENDING applications can be updated");
         }
 
         application.setStatus(status);
@@ -87,7 +91,7 @@ public class ApplicationService {
 
     public ApplicationResponse leaveReview(Long applicationId, ReviewRequest request, String userEmail) {
         if (request.getComment() == null || request.getComment().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment must not be empty");
+            throw new BadRequestException("Comment must not be empty");
         }
 
         User user = findEmployerUser(userEmail);
@@ -108,20 +112,20 @@ public class ApplicationService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
         if (user.getRole() != Role.EMPLOYER) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only employer can perform this action");
+            throw new ForbiddenException("Only employer can perform this action");
         }
         return user;
     }
 
     private Application findApplication(Long applicationId) {
         return applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+                .orElseThrow(() -> new NotFoundException("Application not found"));
     }
 
     private void validateOwnership(Application application, User user) {
         Long ownerId = application.getVacancy().getEmployer().getUser().getId();
         if (!ownerId.equals(user.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only manage applications for your own vacancies");
+            throw new ForbiddenException("You can only manage applications for your own vacancies");
         }
     }
 

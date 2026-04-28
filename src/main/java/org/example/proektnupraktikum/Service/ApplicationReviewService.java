@@ -5,6 +5,9 @@ import org.example.proektnupraktikum.Dto.ReviewDto;
 import org.example.proektnupraktikum.Entity.Application;
 import org.example.proektnupraktikum.Entity.Review;
 import org.example.proektnupraktikum.Entity.User;
+import org.example.proektnupraktikum.Exception.ForbiddenException;
+import org.example.proektnupraktikum.Exception.NotFoundException;
+import org.example.proektnupraktikum.Exception.UnauthorizedException;
 import org.example.proektnupraktikum.Repository.ApplicationRepository;
 import org.example.proektnupraktikum.Repository.ReviewRepository;
 import org.example.proektnupraktikum.Repository.UserRepository;
@@ -29,15 +32,15 @@ public class ApplicationReviewService {
             String userEmail
     ) {
         Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+                .orElseThrow(() -> new NotFoundException("Application by id: {} not found".formatted(applicationId)));
 
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+                .orElseThrow(() -> new UnauthorizedException("User with email: not found".formatted(userEmail)));
 
         boolean isOwner = user.getEmployer() != null
                 && user.getEmployer().getId().equals(application.getVacancy().getEmployer().getId());
         if (!isOwner) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only employer can leave review for this application");
+            throw new ForbiddenException("Only employer can leave review for this application");
         }
 
         Review review = resolveReview(application, user);
@@ -53,7 +56,7 @@ public class ApplicationReviewService {
 
     public Optional<ReviewDto> getReview(Long applicationId) {
         Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+                .orElseThrow(() -> new NotFoundException("Application witch id: {applicationId} not found".formatted(applicationId)));
 
         return Optional.ofNullable(application.getReview())
                 .map(reviewMapper::toDto);

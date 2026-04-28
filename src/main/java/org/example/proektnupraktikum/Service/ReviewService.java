@@ -10,6 +10,9 @@ import org.example.proektnupraktikum.Entity.Enum.Role;
 import org.example.proektnupraktikum.Entity.Review;
 import org.example.proektnupraktikum.Entity.StudentProfile;
 import org.example.proektnupraktikum.Entity.User;
+import org.example.proektnupraktikum.Exception.ForbiddenException;
+import org.example.proektnupraktikum.Exception.NotFoundException;
+import org.example.proektnupraktikum.Exception.UnauthorizedException;
 import org.example.proektnupraktikum.Service.Mapper.ReviewMapper;
 import org.example.proektnupraktikum.Repository.ApplicationRepository;
 import org.example.proektnupraktikum.Repository.EmployerRepository;
@@ -52,33 +55,32 @@ public class ReviewService {
 
     private Application findApplication(Long applicationId) {
         return applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Application not found with id: " + applicationId));
+                .orElseThrow(() -> new NotFoundException("Application not found with id: " + applicationId));
     }
 
     private User findEmployerUser(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
         if (user.getRole() != Role.EMPLOYER) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only employer can leave review");
+            throw new ForbiddenException("Only employer can leave review");
         }
         return user;
     }
 
     private Employer findEmployer(User user) {
         return employerRepository.findEmployerByUserId(user.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Employer not found for user"));
+                .orElseThrow(() -> new ForbiddenException("Employer profile not found for user"));
     }
 
     private void validateOwnership(Application application, Employer employer) {
         if (!application.getVacancy().getEmployer().getId().equals(employer.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can review only applications for your vacancies");
+            throw new ForbiddenException("You can review only applications for your vacancies");
         }
     }
 
     private StudentProfile findStudentProfile(Long studentId) {
         return studentProfileRepository.findById(studentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                .orElseThrow(() -> new NotFoundException(
                         "StudentProfile not found with id: " + studentId));
     }
 

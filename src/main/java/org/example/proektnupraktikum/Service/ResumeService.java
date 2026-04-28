@@ -3,6 +3,7 @@ package org.example.proektnupraktikum.Service;
 import lombok.RequiredArgsConstructor;
 import org.example.proektnupraktikum.Entity.Resume;
 import org.example.proektnupraktikum.Entity.StudentProfile;
+import org.example.proektnupraktikum.Exception.NotFoundException;
 import org.example.proektnupraktikum.Repository.ResumeRepository;
 import org.example.proektnupraktikum.Repository.StudentProfileRepository;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,7 @@ public class ResumeService {
 
     public Resume save(Long studentId, String fileUrl) {
         StudentProfile student = studentProfileRepository.findById(studentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found"));
+                .orElseThrow(() -> new NotFoundException("Student with id: {} not found".formatted(studentId)));
 
         Resume resume = resumeRepository.findByStudentId(studentId)
                 .orElse(new Resume());
