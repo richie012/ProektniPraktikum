@@ -5,6 +5,10 @@ import org.example.proektnupraktikum.Dto.Review.ReviewPostResponseDto;
 import org.example.proektnupraktikum.Entity.*;
 import org.example.proektnupraktikum.Entity.Enum.ApplicationStatus;
 import org.example.proektnupraktikum.Entity.Enum.Role;
+import org.example.proektnupraktikum.Exception.ForbiddenException;
+import org.example.proektnupraktikum.Exception.NotFoundException;
+import org.example.proektnupraktikum.Exception.UnauthorizedException;
+import org.example.proektnupraktikum.Service.Mapper.ReviewMapper;
 import org.example.proektnupraktikum.Repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,7 +17,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -36,6 +39,8 @@ class ReviewServiceTest {
     private StudentProfileRepository studentProfileRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private ReviewMapper reviewMapper;
 
     @InjectMocks
     private ReviewService reviewService;
@@ -70,13 +75,14 @@ class ReviewServiceTest {
         application.setStudent(studentProfile);
     }
 
+
     @Test
-    @DisplayName("throws IllegalArgumentException when application not found")
+    @DisplayName("throws 404 when application not found")
     void throwsWhenApplicationNotFound() {
-        when(applicationRepository.findApplicationById(dto.getApplicationId())).thenReturn(null);
+        when(applicationRepository.findById(dto.getApplicationId())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> reviewService.createReview(dto, employerUser.getEmail()))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(NotFoundException.class);
 
         verify(reviewRepository, never()).save(any());
     }
@@ -84,12 +90,11 @@ class ReviewServiceTest {
     @Test
     @DisplayName("throws 401 when user not found by email")
     void throwsWhenUserNotFound() {
-        when(applicationRepository.findApplicationById(dto.getApplicationId())).thenReturn(application);
+        when(applicationRepository.findById(dto.getApplicationId())).thenReturn(Optional.of(application));
         when(userRepository.findByEmail(employerUser.getEmail())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> reviewService.createReview(dto, employerUser.getEmail()))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("401");
+                .isInstanceOf(UnauthorizedException.class);
 
         verify(reviewRepository, never()).save(any());
     }
@@ -97,12 +102,11 @@ class ReviewServiceTest {
     @Test
     @DisplayName("throws 403 when user is not an employer")
     void throwsWhenUserIsNotEmployer() {
-        when(applicationRepository.findApplicationById(dto.getApplicationId())).thenReturn(application);
+        when(applicationRepository.findById(dto.getApplicationId())).thenReturn(Optional.of(application));
         when(userRepository.findByEmail(studentUser.getEmail())).thenReturn(Optional.of(studentUser));
 
         assertThatThrownBy(() -> reviewService.createReview(dto, studentUser.getEmail()))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("403");
+                .isInstanceOf(ForbiddenException.class);
 
         verify(reviewRepository, never()).save(any());
     }
@@ -110,13 +114,12 @@ class ReviewServiceTest {
     @Test
     @DisplayName("throws 403 when employer profile not found for user")
     void throwsWhenEmployerProfileNotFound() {
-        when(applicationRepository.findApplicationById(dto.getApplicationId())).thenReturn(application);
+        when(applicationRepository.findById(dto.getApplicationId())).thenReturn(Optional.of(application));
         when(userRepository.findByEmail(employerUser.getEmail())).thenReturn(Optional.of(employerUser));
         when(employerRepository.findEmployerByUserId(employerUser.getId())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> reviewService.createReview(dto, employerUser.getEmail()))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("403");
+                .isInstanceOf(ForbiddenException.class);
 
         verify(reviewRepository, never()).save(any());
     }
@@ -127,27 +130,27 @@ class ReviewServiceTest {
         Employer anotherEmployer = new Employer();
         anotherEmployer.setId(99L);
 
-        when(applicationRepository.findApplicationById(dto.getApplicationId())).thenReturn(application);
+        when(applicationRepository.findById(dto.getApplicationId())).thenReturn(Optional.of(application));
         when(userRepository.findByEmail(employerUser.getEmail())).thenReturn(Optional.of(employerUser));
         when(employerRepository.findEmployerByUserId(employerUser.getId())).thenReturn(Optional.of(anotherEmployer));
 
         assertThatThrownBy(() -> reviewService.createReview(dto, employerUser.getEmail()))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("403");
+                .isInstanceOf(ForbiddenException.class);
 
         verify(reviewRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("throws IllegalArgumentException when student profile not found")
+    @DisplayName("throws 404 when student profile not found")
     void throwsWhenStudentProfileNotFound() {
-        when(applicationRepository.findApplicationById(dto.getApplicationId())).thenReturn(application);
+        when(applicationRepository.findById(dto.getApplicationId())).thenReturn(Optional.of(application));
         when(userRepository.findByEmail(employerUser.getEmail())).thenReturn(Optional.of(employerUser));
         when(employerRepository.findEmployerByUserId(employerUser.getId())).thenReturn(Optional.of(employer));
-        when(studentProfileRepository.findStudentProfileById(studentProfile.getId())).thenReturn(null);
+        when(studentProfileRepository.findById(studentProfile.getId())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> reviewService.createReview(dto, employerUser.getEmail()))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(NotFoundException.class);
+
 
         verify(reviewRepository, never()).save(any());
     }
@@ -156,12 +159,17 @@ class ReviewServiceTest {
     @DisplayName("successfully creates review and closes the application")
     void successfullyCreatesReview() {
         Review savedReview = buildSavedReview();
+        ReviewPostResponseDto expectedResponse = new ReviewPostResponseDto(
+                savedReview.getId(), dto.getComment(), dto.getRating(),
+                employer.getId(), studentProfile.getId(), application.getId()
+        );
 
-        when(applicationRepository.findApplicationById(dto.getApplicationId())).thenReturn(application);
+        when(applicationRepository.findById(dto.getApplicationId())).thenReturn(Optional.of(application));
         when(userRepository.findByEmail(employerUser.getEmail())).thenReturn(Optional.of(employerUser));
         when(employerRepository.findEmployerByUserId(employerUser.getId())).thenReturn(Optional.of(employer));
-        when(studentProfileRepository.findStudentProfileById(studentProfile.getId())).thenReturn(studentProfile);
+        when(studentProfileRepository.findById(studentProfile.getId())).thenReturn(Optional.of(studentProfile));
         when(reviewRepository.save(any(Review.class))).thenReturn(savedReview);
+        when(reviewMapper.toPostResponseDto(savedReview)).thenReturn(expectedResponse);
 
         ReviewPostResponseDto response = reviewService.createReview(dto, employerUser.getEmail());
 
