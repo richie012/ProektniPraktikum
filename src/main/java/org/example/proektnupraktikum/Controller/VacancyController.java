@@ -40,7 +40,7 @@ public class VacancyController {
      * @return вакансия
      */
     @GetMapping("/{id}")
-    public Vacancy getById(@PathVariable Long id) {
+    public VacancyResponse getById(@PathVariable Long id) {
         return vacancyService.getVacancyById(id);
     }
 
