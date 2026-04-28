@@ -11,6 +11,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Контроллер резюме
+ */
 @RestController
 @RequestMapping("/api/resume")
 @RequiredArgsConstructor
@@ -18,6 +21,12 @@ public class ResumeController {
 
     private final ResumeService resumeService;
 
+    /**
+     * Получить резюме по идентификатору студента
+     *
+     * @param studentId идентификатор студента
+     * @return идентификатор резюме и ссылка на резюме
+     */
     @GetMapping
     public ResponseEntity<Map<String, Object>> getByStudent(@RequestParam Long studentId) {
         Optional<Resume> found = resumeService.findByStudentId(studentId);
@@ -31,6 +40,13 @@ public class ResumeController {
         return ResponseEntity.ok(body);
     }
 
+    /**
+     * СОхранить резюме студенту
+     *
+     * @param studentId идентификатор студента
+     * @param fileUrl   ссылка на резюме
+     * @return данные о резюме
+     */
     @PostMapping
     public ResponseEntity<Resume> save(
             @RequestParam Long studentId,

@@ -14,6 +14,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+/***
+ * Контроллер заявок
+ */
 @RestController
 @RequestMapping("/api/applications")
 @RequiredArgsConstructor
@@ -21,11 +24,24 @@ public class ApplicationController {
 
     private final ApplicationService applicationService;
 
+    /**
+     * Принять заявку
+     *
+     * @param request заявка
+     * @return принятая заявка
+     */
     @PostMapping
     public Application apply(@RequestBody ApplicationRequest request) {
         return applicationService.apply(request);
     }
 
+    /**
+     * Найти заявку по идентификатору работника или студента
+     *
+     * @param studentId  ид студнета
+     * @param employerId ид работника
+     * @return список заявок по полю
+     */
     @GetMapping
     public List<ApplicationResponse> findApplicationsById(
             @RequestParam(required = false) Long studentId,
@@ -40,6 +56,14 @@ public class ApplicationController {
         return applicationService.findApplicationsById(studentId, employerId);
     }
 
+    /**
+     * Обновить статус заявки
+     *
+     * @param id             ид заявки
+     * @param request        дто с новым статусом
+     * @param authentication авторизованный пользователь
+     * @return результат обновления
+     */
     @PatchMapping("/{id}/status")
     public ApplicationResponse updateStatus(
             @PathVariable Long id,
@@ -49,14 +73,15 @@ public class ApplicationController {
         return applicationService.updateStatus(id, request.getStatus(), authentication.getName());
     }
 
+    /***
+     * Получить заявку по идентификатору заявки
+     * @param id идентификатор заявки
+     * @param authentication авторизованный пользователь
+     *
+     * @return заявка
+     */
     @GetMapping("/{id}")
     public ApplicationResponse getApplicationById(@PathVariable Long id, Authentication authentication) {
         return applicationService.getApplicationById(id, authentication.getName());
     }
-
-    @PostMapping("/{id}/review")
-    public ApplicationResponse leaveReview(@PathVariable Long id, @RequestBody ReviewRequest request, Authentication authentication) {
-        return applicationService.leaveReview(id, request, authentication.getName());
-    }
-
 }

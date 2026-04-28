@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Контроллер отзывов
+ */
 @RestController
 @RequestMapping("/api/review")
 @RequiredArgsConstructor
@@ -17,6 +20,13 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
+    /**
+     * Создание отзыва
+     *
+     * @param dto            данные отзыва
+     * @param authentication данные аутентификации
+     * @return созданный отзыв
+     */
     @PostMapping
     public ReviewPostResponseDto createReview(@RequestBody ReviewPostRequestDto dto, Authentication authentication) {
         return reviewService.createReview(dto, authentication.getName());

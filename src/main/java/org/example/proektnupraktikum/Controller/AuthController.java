@@ -24,6 +24,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.HashMap;
 import java.util.Map;
 
+
+/**
+ * Контроллер аутентификации
+ */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -36,6 +40,13 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
+    /**
+     * Зарегистрировать пользователя, стандартная роль - студент<br>
+     * Если указано в запросе, может быть зарегистрирован работодатель
+     *
+     * @param request данные регистрируемого пользователя
+     * @return токен авторизации
+     */
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody AuthRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -74,6 +85,12 @@ public class AuthController {
                 .body(new AuthResponse(token, "User created"));
     }
 
+    /**
+     * Войти в систему, получить токен аутентификации
+     *
+     * @param request данные пользователя
+     * @return токен аутентификации
+     */
     @PostMapping("/login")
     public AuthResponse login(@RequestBody AuthRequest request) {
 
@@ -88,6 +105,12 @@ public class AuthController {
         return new AuthResponse(token, "Logged in");
     }
 
+    /**
+     * Получить данные о зарегистрированном пользователе
+     *
+     * @param authentication данные аутентификации текущего пользователя
+     * @return возвращает почту, роль, идентификатор студента/работодателя
+     */
     @GetMapping("/me")
     public Map<String, Object> me(Authentication authentication) {
 

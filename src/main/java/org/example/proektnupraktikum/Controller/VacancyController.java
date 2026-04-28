@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Контроллер вакансий
+ */
 @RestController
 @RequestMapping("/api/vacancies")
 @RequiredArgsConstructor
@@ -19,16 +22,35 @@ public class VacancyController {
 
     private final VacancyService vacancyService;
 
+    /**
+     * Получить все вакансии по строке
+     *
+     * @param search поисковая строка
+     * @return список вакансий
+     */
     @GetMapping
     public List<VacancyResponse> getAll(@RequestParam(required = false) String search) {
         return vacancyService.getAll(search);
     }
 
+    /**
+     * Получить вакансию по идентификатору
+     *
+     * @param id идентификатор вакансии
+     * @return вакансия
+     */
     @GetMapping("/{id}")
     public Vacancy getById(@PathVariable Long id) {
         return vacancyService.getVacancyById(id);
     }
 
+    /**
+     * Создать новую вакансию
+     *
+     * @param request        данные о вакансии
+     * @param authentication данные об аутентифицированном пользователе
+     * @return созданная вакансия
+     */
     @PostMapping
     public ResponseEntity<VacancyResponse> create(
             @RequestBody VacancyCreateRequest request,
