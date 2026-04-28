@@ -1,5 +1,7 @@
 package org.example.proektnupraktikum.Controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.example.proektnupraktikum.Entity.Resume;
 import org.example.proektnupraktikum.Service.ResumeService;
@@ -17,6 +19,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/resume")
 @RequiredArgsConstructor
+@Tag(name = "Резюме", description = "Операции с резюме студентов")
 public class ResumeController {
 
     private final ResumeService resumeService;
@@ -27,6 +30,7 @@ public class ResumeController {
      * @param studentId идентификатор студента
      * @return идентификатор резюме и ссылка на резюме
      */
+    @Operation(summary = "Получить резюме по studentId", description = "Получить резюме по идентификатору студента")
     @GetMapping
     public ResponseEntity<Map<String, Object>> getByStudent(@RequestParam Long studentId) {
         Optional<Resume> found = resumeService.findByStudentId(studentId);
@@ -40,13 +44,7 @@ public class ResumeController {
         return ResponseEntity.ok(body);
     }
 
-    /**
-     * СОхранить резюме студенту
-     *
-     * @param studentId идентификатор студента
-     * @param fileUrl   ссылка на резюме
-     * @return данные о резюме
-     */
+    @Operation(summary = "Сохранить резюме студенту", description = "Сохранить/обновить резюме для студента по его id")
     @PostMapping
     public ResponseEntity<Resume> save(
             @RequestParam Long studentId,

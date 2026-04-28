@@ -1,5 +1,7 @@
 package org.example.proektnupraktikum.Controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.example.proektnupraktikum.Dto.Auth.Request.AuthRequest;
 import org.example.proektnupraktikum.Dto.Auth.Response.AuthResponse;
@@ -31,6 +33,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Аутентификация", description = "Регистрация, вход и получение информации о пользователе")
 public class AuthController {
 
     private final StudentProfileRepository studentProfileRepository;
@@ -47,6 +50,7 @@ public class AuthController {
      * @param request данные регистрируемого пользователя
      * @return токен авторизации
      */
+    @Operation(summary = "Регистрация пользователя", description = "Регистрация нового пользователя (студент или работодатель)")
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody AuthRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -91,6 +95,7 @@ public class AuthController {
      * @param request данные пользователя
      * @return токен аутентификации
      */
+    @Operation(summary = "Вход в систему", description = "Аутентификация пользователя и получение JWT токена")
     @PostMapping("/login")
     public AuthResponse login(@RequestBody AuthRequest request) {
 
@@ -111,6 +116,7 @@ public class AuthController {
      * @param authentication данные аутентификации текущего пользователя
      * @return возвращает почту, роль, идентификатор студента/работодателя
      */
+    @Operation(summary = "Информация о текущем пользователе", description = "Получить email, роль и id профиля текущего пользователя")
     @GetMapping("/me")
     public Map<String, Object> me(Authentication authentication) {
 
