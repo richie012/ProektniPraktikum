@@ -1,0 +1,94 @@
+Table User {
+  id int
+  email string
+  password string
+  role roleEnum
+}
+
+Table StudentProfile {
+  id int
+  user_id int
+  name string
+  phone string
+  skills enum
+}
+
+Table Employer {
+  id int
+  user_id int
+  company_name string
+}
+
+Table Vacancy {
+  id int
+  title string
+  description string
+  employer_id int
+  created_at datetime
+}
+
+Table Application {
+  id int
+  student_id int
+  vacancy_id int
+  status AppStatusEnum
+  created_at datetime
+}
+
+Table Resume {
+  id int
+  student_id int
+  file_url string
+}
+
+Table Cover_Letter {
+  id int
+  application_id int
+  text string
+}
+
+Table Review {
+  id int
+  employer_id int
+  student_id int
+  rating int
+  comment int
+}
+
+Table Notification {
+  id int
+  user_id int
+  text int
+  is_read bool
+}
+
+Table Interview {
+  id int
+  application_id int
+  date datetime
+  location string
+}
+
+
+Ref: "StudentProfile"."user_id" - "User"."id"
+
+Ref: "Employer"."user_id" - "User"."id"
+
+Ref: "Employer"."id" < "Vacancy"."employer_id"
+
+
+Ref: "StudentProfile"."id" < "Application"."student_id"
+
+Ref: "Vacancy"."id" < "Application"."vacancy_id"
+
+Ref: "Cover_Letter"."application_id" - "Application"."id"
+
+Ref: "Interview"."application_id" - "Application"."id"
+
+Ref: "StudentProfile"."id" - "Resume"."student_id"
+
+Ref: "User"."id" < "Notification"."user_id"
+
+Ref: "Employer"."id" < "Review"."employer_id"
+
+Ref: "StudentProfile"."id" < "Review"."student_id"
