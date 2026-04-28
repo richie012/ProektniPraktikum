@@ -23,6 +23,8 @@ public class ApplicationReviewController {
 
     @GetMapping
     public ResponseEntity<ReviewDto> getReview(@PathVariable Long applicationId) {
-        return ResponseEntity.ok(reviewService.getReview(applicationId));
+        return reviewService.getReview(applicationId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
     }
 }

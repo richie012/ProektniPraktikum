@@ -20,7 +20,7 @@ public class User {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    private Role role; // STUDENT, EMPLOYER
+    private Role role;
 
     @OneToOne(mappedBy = "user")
     private Employer employer;

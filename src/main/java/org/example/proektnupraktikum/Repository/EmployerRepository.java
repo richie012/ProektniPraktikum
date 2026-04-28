@@ -13,6 +13,7 @@ public interface EmployerRepository extends JpaRepository<Employer, Long> {
 
     Employer findEmployerById(Long id);
 
-    Employer findEmployerByUserId(Long id);
+    Optional<Employer> findEmployerByUserId(Long id);
+
 }
 

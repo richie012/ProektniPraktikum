@@ -16,7 +16,6 @@ import org.example.proektnupraktikum.Repository.ReviewRepository;
 import org.example.proektnupraktikum.Repository.StudentProfileRepository;
 import org.example.proektnupraktikum.Repository.UserRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -40,10 +39,8 @@ public class ReviewService {
         if (user.getRole() != Role.EMPLOYER) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only employer can leave review");
         }
-        Employer employer = employerRepository.findEmployerByUserId(user.getId());
-        if (employer == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Employer not found for user");
-        }
+        Employer employer = employerRepository.findEmployerByUserId(user.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Employer not found for user"));
         if (!application.getVacancy().getEmployer().getId().equals(employer.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can review only applications for your vacancies");
         }
