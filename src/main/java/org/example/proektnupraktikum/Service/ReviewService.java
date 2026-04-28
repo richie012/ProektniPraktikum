@@ -19,9 +19,7 @@ import org.example.proektnupraktikum.Repository.EmployerRepository;
 import org.example.proektnupraktikum.Repository.ReviewRepository;
 import org.example.proektnupraktikum.Repository.StudentProfileRepository;
 import org.example.proektnupraktikum.Repository.UserRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor

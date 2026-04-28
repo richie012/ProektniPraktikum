@@ -15,9 +15,7 @@ import org.example.proektnupraktikum.Service.Mapper.VacancyMapper;
 import org.example.proektnupraktikum.Repository.EmployerRepository;
 import org.example.proektnupraktikum.Repository.UserRepository;
 import org.example.proektnupraktikum.Repository.VacancyRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;

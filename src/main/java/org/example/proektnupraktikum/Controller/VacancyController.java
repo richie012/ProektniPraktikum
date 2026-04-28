@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.example.proektnupraktikum.Dto.Vacancy.Request.VacancyCreateRequest;
 import org.example.proektnupraktikum.Dto.Vacancy.Response.VacancyResponse;
-import org.example.proektnupraktikum.Entity.Vacancy;
 import org.example.proektnupraktikum.Service.VacancyService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
