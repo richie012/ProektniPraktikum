@@ -1,6 +1,6 @@
 package org.example.proektnupraktikum.Service;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.example.proektnupraktikum.Dto.Review.ReviewPostRequestDto;
 import org.example.proektnupraktikum.Dto.Review.ReviewPostResponseDto;
 import org.example.proektnupraktikum.Entity.Application;
@@ -10,6 +10,7 @@ import org.example.proektnupraktikum.Entity.Enum.Role;
 import org.example.proektnupraktikum.Entity.Review;
 import org.example.proektnupraktikum.Entity.StudentProfile;
 import org.example.proektnupraktikum.Entity.User;
+import org.example.proektnupraktikum.Service.Mapper.ReviewMapper;
 import org.example.proektnupraktikum.Repository.ApplicationRepository;
 import org.example.proektnupraktikum.Repository.EmployerRepository;
 import org.example.proektnupraktikum.Repository.ReviewRepository;
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
@@ -28,46 +29,67 @@ public class ReviewService {
     private final EmployerRepository employerRepository;
     private final StudentProfileRepository studentProfileRepository;
     private final UserRepository userRepository;
+    private final ReviewMapper reviewMapper;
 
     public ReviewPostResponseDto createReview(ReviewPostRequestDto dto, String employerEmail) {
-        Application application = applicationRepository.findApplicationById(dto.getApplicationId());
-        if (application == null) {
-            throw new IllegalArgumentException("Application not found with id: " + dto.getApplicationId());
-        }
-        User user = userRepository.findByEmail(employerEmail)
+        Application application = findApplication(dto.getApplicationId());
+        User user = findEmployerUser(employerEmail);
+        Employer employer = findEmployer(user);
+
+        validateOwnership(application, employer);
+
+        StudentProfile studentProfile = findStudentProfile(application.getStudent().getId());
+
+        Review review = buildReview(dto, application, employer, studentProfile);
+        Review saved = reviewRepository.save(review);
+
+        application.setStatus(ApplicationStatus.CLOSED);
+        application.setReview(saved);
+        applicationRepository.save(application);
+
+        return reviewMapper.toPostResponseDto(saved);
+    }
+
+    private Application findApplication(Long applicationId) {
+        return applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Application not found with id: " + applicationId));
+    }
+
+    private User findEmployerUser(String email) {
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
         if (user.getRole() != Role.EMPLOYER) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only employer can leave review");
         }
-        Employer employer = employerRepository.findEmployerByUserId(user.getId())
+        return user;
+    }
+
+    private Employer findEmployer(User user) {
+        return employerRepository.findEmployerByUserId(user.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Employer not found for user"));
+    }
+
+    private void validateOwnership(Application application, Employer employer) {
         if (!application.getVacancy().getEmployer().getId().equals(employer.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can review only applications for your vacancies");
         }
-        StudentProfile studentProfile = studentProfileRepository.findStudentProfileById(application.getStudent().getId());
-        if (studentProfile == null) {
-            throw new IllegalArgumentException("StudentProfile not found with id: " + application.getStudent().getId());
-        }
+    }
+
+    private StudentProfile findStudentProfile(Long studentId) {
+        return studentProfileRepository.findById(studentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "StudentProfile not found with id: " + studentId));
+    }
+
+    private Review buildReview(ReviewPostRequestDto dto, Application application,
+                               Employer employer, StudentProfile student) {
         Review review = new Review();
         review.setApplication(application);
         review.setEmployer(employer);
+        review.setStudent(student);
         review.setRating(dto.getRating());
-        review.setStudent(studentProfile);
         review.setComment(dto.getComment());
-        Review createdReview = reviewRepository.save(review);
-
-        application.setStatus(ApplicationStatus.CLOSED);
-        application.setReview(createdReview);
-        applicationRepository.save(application);
-
-
-        return new ReviewPostResponseDto(
-                createdReview.getId(),
-                createdReview.getComment(),
-                createdReview.getRating(),
-                createdReview.getEmployer().getId(),
-                createdReview.getStudent().getId(),
-                createdReview.getApplication().getId()
-        );
+        return review;
     }
 }

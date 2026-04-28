@@ -5,7 +5,9 @@ import org.example.proektnupraktikum.Entity.Resume;
 import org.example.proektnupraktikum.Entity.StudentProfile;
 import org.example.proektnupraktikum.Repository.ResumeRepository;
 import org.example.proektnupraktikum.Repository.StudentProfileRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -22,7 +24,7 @@ public class ResumeService {
 
     public Resume save(Long studentId, String fileUrl) {
         StudentProfile student = studentProfileRepository.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Student not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found"));
 
         Resume resume = resumeRepository.findByStudentId(studentId)
                 .orElse(new Resume());
