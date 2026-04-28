@@ -24,19 +24,12 @@ export default function EmployerProfilePage({ user }) {
     const [applications, setApplications] = useState([]);
     const [appsLoading, setAppsLoading] = useState(false);
     const [appsError, setAppsError] = useState("");
-    // const [statusActionLoadingId, setStatusActionLoadingId] = useState(null);
-    // const [statusActionError, setStatusActionError] = useState("");
 
     const [vacancyTitle, setVacancyTitle] = useState("");
     const [vacancyDescription, setVacancyDescription] = useState("");
     const [createLoading, setCreateLoading] = useState(false);
     const [createError, setCreateError] = useState("");
     const [createdVacancy, setCreatedVacancy] = useState(null);
-
-    // const [reviewLoadingId, setReviewLoadingId] = useState(null);
-    // const [reviewError, setReviewError] = useState("");
-    // const [reviewText, setReviewText] = useState("");
-    // const reviewInputRefs = useRef({});
 
     const requestedTab = searchParams.get("tab");
     const allowedTabs = ["profile", "applications", "create-vacancy"];
@@ -109,10 +102,6 @@ export default function EmployerProfilePage({ user }) {
         }
     };
 
-    // const handleUpdateApplicationStatus = ... (удалено)
-
-    // const handleLeaveReview = ... (удалено)
-
     return (
         <>
             <Container className="mt-5" style={{ maxWidth: "1140px" }}>
@@ -178,8 +167,6 @@ export default function EmployerProfilePage({ user }) {
                                         <span>Загрузка откликов...</span>
                                     </div>
                                 )}
-                                {!appsLoading && appsError && <Alert variant="danger">⚠️ {appsError}</Alert>}
-                                {/* Ошибка по статусу отклика больше не используется */}
                                 {!appsLoading && !appsError && applications.length === 0 && (
                                     <Alert variant="info">ℹ️ На ваши вакансии пока нет откликов.</Alert>
                                 )}

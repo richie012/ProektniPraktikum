@@ -8,7 +8,6 @@ import ApplicationPage from "./ApplicationPage";
 export default function ProfilePage() {
     const { user } = useAuth();
 
-    // ── не авторизован ──
     if (!user) {
         return (
             <Container className="mt-5">
